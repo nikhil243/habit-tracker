@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stylish Habit Tracker — Intensity</title>
+<style>
+  /* ----- Base styles (kept visually the same) ----- */
+  :root{
+    --bg:#111;
+    --panel:#1e1e1e;
+    --muted:#b7c0cc;
+    --card-radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+    background:#0f1114; color:#eef2f7;
+  }
+
+  header{ background:#0e1418; padding:12px 16px; font-weight:700; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+  header h1{ margin:0; font-size:18px; letter-spacing:0.2px; }
+  header .small{ color:var(--muted); font-size:13px; }
+
+  main{ padding:18px; max-width:1100px; margin:18px auto; display:flex; flex-direction:column; gap:18px; }
+
+  .habit {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:12px; padding:12px; box-shadow:0 10px 30px rgba(2,6,23,0.6);
+  }
+  .habit-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+  .habit-header h3{ margin:0; font-size:16px; }
+  .habit-actions{ display:flex; gap:8px; align-items:center; }
+  .icon-btn{ background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--muted); padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:600;}
+  .icon-btn:hover{ background:rgba(255,255,255,0.02); color: #fff }
+
+  /* months row (smooth scroll) */
+  .months {
+    display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; -webkit-overflow-scrolling:touch;
+  }
+  .month {
+    min-width: 220px; background:rgba(255,255,255,0.02); padding:8px; border-radius:8px;
+  }
+  .month h4{ margin:0 0 8px 0; font-size:13px; color:var(--muted); text-align:center; }
+
+  /* GitHub-style tiny squares */
+  .days{ display:grid; grid-template-columns: repeat(7, 14px); gap:4px; justify-content:center; }
+  .day{
+    width:14px; height:14px; background: rgba(255,255,255,0.03); border-radius:3px; cursor:pointer; transition: transform .08s ease, box-shadow .08s;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,0.25);
+  }
+  .day:hover{ transform: translateY(-3px); }
+
+  .legend{ display:flex; gap:6px; align-items:center; margin-top:8px; color:var(--muted); font-size:12px; }
+
+  /* progress */
+  .progress{ margin-top:10px; display:flex; align-items:center; gap:12px; justify-content:space-between; }
+  .progress-bar{ flex:1; height:10px; background:rgba(255,255,255,0.04); border-radius:999px; overflow:hidden; margin-right:12px; }
+  .progress-fill{ height:100%; width:0%; background:var(--fill,#4cc9f0); transition:width .25s ease; }
+
+  .progress-meta{ font-size:13px; color:var(--muted); min-width:120px; text-align:right; }
+
+  /* floating add button */
+  .add-fab{
+    position:fixed; right:20px; bottom:24px; width:66px; height:66px; border-radius:50%; background:linear-gradient(135deg,#4cc9f0,#7c5cff); color:#071026; display:grid; place-items:center; font-size:32px; font-weight:700; cursor:pointer;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    border: none;
+  }
+
+  /* modal */
+  .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(3,6,12,0.6); visibility:hidden; opacity:0; transition: opacity .18s; }
+  .modal.show{ visibility:visible; opacity:1; }
+  .modal-card{ background:linear-gradient(180deg,#081019,#0f1724); padding:16px; border-radius:12px; width:320px; box-shadow: 0 12px 40px rgba(2,6,23,0.8); }
+  .modal-card h3{ margin:0 0 8px 0; }
+  .form-row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
+  .form-row input[type="text"]{ flex:1; padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:#eaf2ff; }
+  .form-row input[type="color"]{ width:44px; height:36px; border-radius:8px; border:none; padding:0; cursor:pointer; }
+
+  .modal-actions{ display:flex; gap:8px; margin-top:12px; }
+  .btn{ padding:8px 10px; border-radius:8px; border: none; cursor:pointer; font-weight:700; }
+  .btn.primary{ background:linear-gradient(135deg,#4cc9f0,#7c5cff); color:#071026; }
+  .btn.ghost{ background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.04); }
+
+  @media (max-width:720px){
+    .month{ min-width:200px; }
+    .days{ gap:3px; grid-template-columns: repeat(7, 12px); }
+    .day{ width:12px; height:12px; border-radius:3px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🗓️ Habit Tracker</h1>
+    <div class="small">Intensity tracking — click days to cycle intensity (0 → 1 → 2 → 3 → 0)</div>
+  </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div class="small">Stored locally</div>
+  </div>
+</header>
+
+<main id="mainContainer">
+  <!-- Habit cards will be injected here -->
+</main>
+
+<button class="add-fab" id="openAdd">+</button>
+
+<!-- Add Habit Modal -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h3>Add Habit</h3>
+    <div class="form-row">
+      <input id="habitName" type="text" placeholder="Habit name (e.g., Read, Gym)" />
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <label style="color:var(--muted); font-size:13px; min-width:70px;">Pick color</label>
+      <input id="habitColor" type="color" value="#4cc9f0"/>
+      <div style="flex:1; color:var(--muted); font-size:13px; text-align:right;">Shades auto-generated</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelAdd">Cancel</button>
+      <button class="btn primary" id="confirmAdd">Add Habit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Utilities for color conversion and shade generation ---------- */
+
+// hex to {h,s,l}
+function hexToHsl(hex) {
+  hex = hex.replace('#','');
+  if(hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const r = parseInt(hex.slice(0,2),16)/255;
+  const g = parseInt(hex.slice(2,4),16)/255;
+  const b = parseInt(hex.slice(4,6),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h=0, s=0, l=(max+min)/2;
+  if(max!==min){
+    const d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100) };
+}
+
+// hsl to css string
+function hslCss(h,s,l, a=1){ return `hsl(${h} ${s}% ${l}% / ${a})`; }
+
+// create 3 shades from base hex using HSL adjustments
+function generateShades(hex) {
+  const hsl = hexToHsl(hex);
+  // light -> medium -> dark
+  // ensure variety: lighter L for level1, medium near base L, darker lowered L for level3
+  const baseL = hsl.l;
+  const shades = [
+    hslCss(hsl.h, Math.max(10, hsl.s*0.6), Math.min(95, Math.round(baseL + (18))), 1), // level1 - light
+    hslCss(hsl.h, Math.max(12, hsl.s*0.9), Math.min(85, Math.round(baseL + 2)), 1),   // level2 - mid
+    hslCss(hsl.h, Math.min(100, Math.round(hsl.s)), Math.max(18, Math.round(baseL - 18)), 1) // level3 - dark
+  ];
+  return shades;
+}
+
+/* ---------- Storage & data model ---------- */
+/* Model:
+  habitats = [
+    {
+      id: "uuid",
+      name: "Read",
+      baseColor: "#4cc9f0",
+      shades: [ "hsl(...)", "hsl(...)", "hsl(...)" ],
+      days: { "2025-08-14": 2, "2025-08-15": 3, ... } // intensity 1..3
+    },
+    ...
+  ]
+*/
+const STORAGE_KEY = 'stylish_habits_v2';
+let habits = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+}
+
+/* ---------- DOM building ---------- */
+const mainContainer = document.getElementById('mainContainer');
+
+function uid(prefix='h'){ return prefix + Math.random().toString(36).slice(2,9); }
+function ymd(d){ const z = new Date(d); const s = z.toISOString().slice(0,10); return s; }
+
+// generate days for a month (returns array of Date objects)
+function generateDaysForMonth(year, month){
+  const arr = [];
+  const d = new Date(year, month, 1);
+  while(d.getMonth() === month){
+    arr.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  return arr;
+}
+
+function render(){
+  mainContainer.innerHTML = '';
+  const currentYear = new Date().getFullYear();
+
+  // for each habit create card
+  habits.forEach((h, idx) => {
+    const card = document.createElement('div');
+    card.className = 'habit';
+
+    // header
+    const header = document.createElement('div'); header.className = 'habit-header';
+    const title = document.createElement('h3'); title.textContent = h.name;
+    const actions = document.createElement('div'); actions.className = 'habit-actions';
+
+    const deleteBtn = document.createElement('button'); deleteBtn.className='icon-btn'; deleteBtn.title='Delete habit';
+    deleteBtn.innerHTML = '🗑️';
+    deleteBtn.onclick = ()=>{
+      if(confirm('Delete habit "'+h.name+'"? This will remove all its data.')){
+        habits.splice(idx,1); save(); render();
+      }
+    };
+
+    actions.appendChild(deleteBtn);
+    header.appendChild(title);
+    header.appendChild(actions);
+    card.appendChild(header);
+
+    // months row
+    const monthsRow = document.createElement('div'); monthsRow.className = 'months';
+    monthsRow.setAttribute('aria-hidden','false');
+    for(let m=0;m<12;m++){
+      const monthCard = document.createElement('div'); monthCard.className='month';
+      const monthName = new Date(currentYear, m, 1).toLocaleString('default',{ month: 'short' });
+      const mh = document.createElement('h4'); mh.textContent = monthName;
+      monthCard.appendChild(mh);
+
+      // days grid
+      const daysGrid = document.createElement('div'); daysGrid.className='days';
+
+      // add leading empty cells so weeks align (make month start on its weekday)
+      const first = new Date(currentYear, m, 1);
+      const lead = first.getDay(); // 0..6
+      // we still want 7 columns; to keep same look as previous code, we won't add empty visual placeholders for GitHub style (but to align, add empty nodes)
+      for(let e=0;e<lead;e++){
+        const blank = document.createElement('div'); blank.style.visibility='hidden'; blank.style.width='14px'; blank.style.height='14px';
+        daysGrid.appendChild(blank);
+      }
+
+      const days = generateDaysForMonth(currentYear, m);
+      days.forEach(dobj => {
+        const key = ymd(dobj);
+        const cell = document.createElement('div'); cell.className='day';
+        const intensity = (h.days && h.days[key]) ? h.days[key] : 0;
+        applyCellColor(cell, h, intensity);
+        cell.title = `${key} — intensity ${intensity}`;
+        cell.onclick = (ev)=>{
+          // cycle intensity: 0 -> 1 -> 2 -> 3 -> 0
+          const curr = (h.days && h.days[key]) ? h.days[key] : 0;
+          let next = (curr + 1) % 4;
+          if(!h.days) h.days = {};
+          if(next === 0){ delete h.days[key]; } else { h.days[key] = next; }
+          applyCellColor(cell, h, next);
+          cell.title = `${key} — intensity ${next}`;
+          save();
+          // update progress bar
+          updateProgress(h, card);
+        };
+        daysGrid.appendChild(cell);
+      });
+
+      monthCard.appendChild(daysGrid);
+      monthsRow.appendChild(monthCard);
+    }
+
+    card.appendChild(monthsRow);
+
+    // legend row (shows 0..3 shades)
+    const legend = document.createElement('div'); legend.className='legend';
+    legend.innerHTML = `<div style="color:var(--muted)">Less</div>`;
+    // show level 1..3 boxes
+    const shades = h.shades || generateShades(h.baseColor || '#4cc9f0');
+    for(let i=0;i<3;i++){
+      const box = document.createElement('div'); box.style.width='14px'; box.style.height='14px'; box.style.borderRadius='3px';
+      box.style.background = shades[i];
+      box.style.border = '1px solid rgba(0,0,0,0.28)';
+      legend.appendChild(box);
+    }
+    legend.insertAdjacentHTML('beforeend','<div style="color:var(--muted)">More</div>');
+    card.appendChild(legend);
+
+    // progress area
+    const progressWrap = document.createElement('div'); progressWrap.className='progress';
+    const bar = document.createElement('div'); bar.className='progress-bar';
+    const fill = document.createElement('div'); fill.className='progress-fill';
+    fill.style.background = shades[2]; // darkest shade as fill color
+    bar.appendChild(fill);
+    const meta = document.createElement('div'); meta.className='progress-meta'; meta.textContent = '0% this week';
+    progressWrap.appendChild(bar); progressWrap.appendChild(meta);
+    card.appendChild(progressWrap);
+
+    // initial progress calc
+    updateProgress(h, card);
+
+    mainContainer.appendChild(card);
+  });
+
+  // when done, attach smooth scroll styling tweaks (no JS needed for smooth but ensure overflow-x works)
+}
+
+/* Apply visual color & classes to cell by intensity */
+function applyCellColor(cell, habit, intensity){
+  cell.classList.remove('active');
+  if(!intensity || intensity === 0){
+    cell.style.background = 'rgba(255,255,255,0.03)';
+    return;
+  }
+  const shades = habit.shades || generateShades(habit.baseColor || '#4cc9f0');
+  // intensity 1 -> shades[0], 2 -> shades[1], 3 -> shades[2]
+  const color = shades[Math.max(0, Math.min(2, intensity-1))];
+  cell.style.background = color;
+  cell.classList.add('active');
+}
+
+/* calculate average intensity this week and update progress UI */
+function updateProgress(habit, card){
+  // week: Sunday..Saturday of current week
+  const now = new Date();
+  const startOfWeek = new Date(now); startOfWeek.setHours(0,0,0,0);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+  const daysThisWeek = [];
+  for(let d = 0; d < 7; d++){
+    const dd = new Date(startOfWeek); dd.setDate(startOfWeek.getDate() + d);
+    daysThisWeek.push(ymd(dd));
+  }
+  const intensities = daysThisWeek.map(k => (habit.days && habit.days[k]) ? habit.days[k] : 0);
+  const sum = intensities.reduce((a,b)=>a+b,0);
+  const avg = sum / 7; // 0..3
+  const percent = Math.round((avg / 3) * 100);
+  const fill = card.querySelector('.progress-fill');
+  const text = card.querySelector('.progress-meta');
+  if(fill) fill.style.width = percent + '%';
+  if(text) text.textContent = `${percent}% this week`;
+}
+
+/* ---------- Modal & add habit flow ---------- */
+const openAdd = document.getElementById('openAdd');
+const modal = document.getElementById('modal');
+const cancelAdd = document.getElementById('cancelAdd');
+const confirmAdd = document.getElementById('confirmAdd');
+const habitNameInput = document.getElementById('habitName');
+const habitColorInput = document.getElementById('habitColor');
+
+openAdd.onclick = ()=>{
+  habitNameInput.value = '';
+  habitColorInput.value = '#4cc9f0';
+  modal.classList.add('show');
+  habitNameInput.focus();
+};
+cancelAdd.onclick = ()=> modal.classList.remove('show');
+modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.classList.remove('show'); });
+
+confirmAdd.onclick = ()=>{
+  const name = habitNameInput.value.trim();
+  const color = habitColorInput.value;
+  if(!name) { alert('Please give the habit a name'); habitNameInput.focus(); return; }
+  const shades = generateShades(color);
+  const newHabit = { id: uid(), name, baseColor: color, shades, days: {} };
+  habits.push(newHabit);
+  save();
+  modal.classList.remove('show');
+  render();
+};
+
+/* ---------- Initialize & Render ---------- */
+render();
+
+/* When page first loads, ensure old-format habits (if any) are compatible:
+   If existing habits store days as array of keys (old format), convert to object with intensities 1.
+*/
+(function normalizeExisting() {
+  let changed = false;
+  habits.forEach(h=>{
+    if(Array.isArray(h.days)){
+      const o = {};
+      h.days.forEach(k => { o[k] = 1; });
+      h.days = o;
+      changed = true;
+    }
+    // if shades missing but baseColor present, generate shades
+    if(!h.shades && h.baseColor){
+      h.shades = generateShades(h.baseColor);
+      changed = true;
+    }
+  });
+  if(changed) { save(); render(); }
+})();
+
+</script>
+</body>
+</html>
