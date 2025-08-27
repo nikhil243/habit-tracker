@@ -24,3 +24,4 @@ HTML, CSS, and JavaScript (no external libraries)
 LocalStorage for data persistence
 License
 This project is open-source and free to use.
+https://nikhil243.github.io/habit-tracker/
