@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stylish Habit Tracker — Intensity</title>
+<link rel="stylesheet" href="HabitTracker2.css">
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Habit Tracker</h1>
+    <div class="small">Intensity tracking — click days to cycle intensity (0 → 1 → 2 → 3 → 0)</div>
+  </div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div class="small">Stored locally</div>
+  </div>
+</header>
+
+<main id="mainContainer"></main>
+
+<button class="add-fab" id="openAdd">+</button>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h3>Add Habit</h3>
+    <div class="form-row">
+      <input id="habitName" type="text" placeholder="Habit name (e.g., Read, Gym)" />
+    </div>
+    <div class="form-row" style="margin-top:8px;">
+      <label style="color:var(--muted); font-size:13px; min-width:70px;">Pick color</label>
+      <input id="habitColor" type="color" value="#4cc9f0"/>
+      <div style="flex:1; color:var(--muted); font-size:13px; text-align:right;">Shades auto-generated</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="cancelAdd">Cancel</button>
+      <button class="btn primary" id="confirmAdd">Add Habit</button>
+    </div>
+  </div>
+</div>
+
+<script src="HabitTracker2.js">
+
+</script>
+</body>
+</html>
+
